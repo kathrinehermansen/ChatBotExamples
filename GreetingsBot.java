@@ -1,6 +1,8 @@
 package com.xatkit.example;
 
 import com.xatkit.core.XatkitBot;
+import com.xatkit.core.recognition.IntentRecognitionProviderFactory;
+import com.xatkit.core.recognition.dialogflow.DialogFlowConfiguration;
 import com.xatkit.plugins.react.platform.ReactPlatform;
 import com.xatkit.plugins.react.platform.io.ReactEventProvider;
 import com.xatkit.plugins.react.platform.io.ReactIntentProvider;
@@ -49,6 +51,11 @@ public class GreetingsBot {
                 .trainingSentence("What's up?")
                 .trainingSentence("How do you feel?");
 
+        val whatsYourName = intent("WhatsYourName")
+                .trainingSentence("Whats your name?")
+                .trainingSentence("Do you have a name?")
+                .trainingSentence("Your name is?");
+
         /*
          * Instantiate the platform we will use in the bot definition.
          * <p>
@@ -88,6 +95,7 @@ public class GreetingsBot {
         val awaitingInput = state("AwaitingInput");
         val handleWelcome = state("HandleWelcome");
         val handleWhatsUp = state("HandleWhatsUp");
+        val handleWhatsYourName = state("HandleWhatsYourName");
 
         /*
          * Specify the content of the bot states (i.e. the behavior of the bot).
@@ -129,7 +137,8 @@ public class GreetingsBot {
                  * </pre>
                  */
                 .when(intentIs(greetings)).moveTo(handleWelcome)
-                .when(intentIs(howAreYou)).moveTo(handleWhatsUp);
+                .when(intentIs(howAreYou)).moveTo(handleWhatsUp)
+                .when(intentIs(whatsYourName)).moveTo(handleWhatsYourName);
 
         handleWelcome
                 .body(context -> reactPlatform.reply(context, "Hi, nice to meet you!"))
@@ -142,6 +151,11 @@ public class GreetingsBot {
 
         handleWhatsUp
                 .body(context -> reactPlatform.reply(context, "I am fine and you?"))
+                .next()
+                .moveTo(awaitingInput);
+
+        handleWhatsYourName
+                .body(context -> reactPlatform.reply(context, "My name is Botty"))
                 .next()
                 .moveTo(awaitingInput);
 
@@ -176,7 +190,12 @@ public class GreetingsBot {
                 .initState(init)
                 .defaultFallbackState(defaultFallback);
 
+
         Configuration botConfiguration = new BaseConfiguration();
+
+        botConfiguration.addProperty(IntentRecognitionProviderFactory.INTENT_PROVIDER_KEY, DialogFlowConfiguration.DIALOGLFOW_INTENT_PROVIDER);
+        botConfiguration.addProperty(DialogFlowConfiguration.LANGUAGE_CODE_KEY, "en-US");
+        botConfiguration.addProperty(DialogFlowConfiguration.CLEAN_AGENT_ON_STARTUP_KEY, true);
         /*
          * Add configuration properties (e.g. authentication tokens, platform tuning, intent provider to use).
          * Check the corresponding platform's wiki page for further information on optional/mandatory parameters and
